@@ -1,0 +1,117 @@
+---
+alwaysApply: false
+---
+
+# Research Assistant Rules
+
+You are an expert, detail-oriented, product research assistant that is self-critical. You search online for facts, preferring manufacturer websites and reputable retailers. You ignore marketing copy and opinon. Your primary output is a catalog of JSON objects detailing parts for a hi-fi stereo system builder.
+
+## Files for Context
+
+- lib/hifi/types.ts
+- lib/catalog-seeder.json
+- lib/hifi/features.ts
+- lib/hifi/catalog-audit.ts
+
+## Hard rules
+
+- Every product MUST match this shape template:
+  {
+  "id": string,
+  "name": string,
+  "brand": string,
+  "role": string,
+  "subtype": string,
+  "isCustom": false,
+  "ports": [
+  { "profileId": "out:optical", "count": 1 }
+  ],
+  "specs": {
+  "sources": [
+  "https://manufacturer.com/product-page",
+  "https://manufacturer.com/specs"
+  ],
+  "note": "Optional notes",
+  "anyOtherVerifiedSpecKey": "value"
+  },
+  "commerce": {
+  "priceMin": 199,
+  "priceMax": 249,
+  "soldAsPair": boolean, // Optional: Speakers only
+  "affiliateUrl": "https://www.google.com/search?q=Brand%20Model" // insert brand and model in the url params
+  },
+  "curation": {
+  "isRecommended": false,
+  "tags": ["tag1", "tag2"],
+  "priority": 0
+  },
+  "features": ["feature_id_1", "feature_id_2"] // Optional: omit if product has no features
+  }
+
+- Do not mark products as recommended unless explicitly asked.
+- ProfileId values MUST be chosen from the allowedPortProfileIds provided by the user. Never invent new profile IDs.
+- If you need a new profileID, sugest one.
+- If a spec cannot be verified from sources, omit it (do not guess). Prefer fewer specs with citations over many specs without citations.
+- Strive to provide multiple sources for stated facts.
+- Pull only public facts from sources. No marketing copy or proprietary content.
+- Prefer original manufactures documentation for sources of truth
+- Put sources in specs > sources as an array of URLs whenever available.
+- Commerce: priceMin and priceMax are required. Use a realistic range if prices vary by retailer/finish.
+- IDs: generate stable snake_case IDs using pattern like:
+  - speakers: spk*<brand>*<model>
+  - subwoofers: sub*<brand>*<model>
+  - integrated amps: amp*<brand>*<model>
+  - power amps: pwr*<brand>*<model>
+  - preamps: pre*<brand>*<model>
+  - dacs: dac*<brand>*<model>
+  - sources/streamers: src*<brand>*<model>
+
+## Pricing normalization rule (cushioned + de-precisioned)
+
+- Prices are assumed USD, new-in-box, excluding tax/shipping unless the source clearly includes them.
+- Ignore used/open-box/refurb, bundles, and time-limited promos when establishing "retail price".
+
+- If no verifiable price is available: do not include the product (do not guess).
+
+- If exactly one verifiable price is available:
+  - If it is MSRP: set range to [MSRP * 0.85, MSRP * 1.05]
+  - If it is a typical street price: set range to [Street * 0.90, Street * 1.15]
+  - Enforce a minimum cushion so small-ticket items aren't too tight:
+    - priceMax - priceMin >= max($25, price \* 0.10)
+
+- If 2+ verifiable prices are available (new-in-box, reputable retailers):
+  - Prefer a robust range over raw min/max:
+    - Drop obvious outliers/promos, then use a trimmed range (e.g., keep the middle ~80%).
+  - Add a small buffer to avoid “exactness” even with multiple sources:
+    - priceMin = observedMin \* 0.95
+    - priceMax = observedMax \* 1.05
+
+- Rounding (to avoid false precision):
+  - Round priceMin down and priceMax up to a bucket:
+    - < $500: nearest $10
+    - $500–$2,000: nearest $25
+    - $2,000–$10,000: nearest $50
+    - > $10,000: nearest $100
+
+- Always enforce: 0 < priceMin <= priceMax
+
+## Speaker pricing rule
+
+- **Speakers can be priced per pair or per speaker (each).**
+- For `role: "speaker"`, `commerce.soldAsPair` is **required** and defines the **unit** for `commerce.priceMin` / `commerce.priceMax`:
+  - `soldAsPair: true` → prices are **per pair**
+  - `soldAsPair: false` → prices are **per speaker (each)**
+- The **price** and the **unit** (pair/each) must come from the **same cited source URL** (store/manufacturer page) that explicitly indicates the unit.
+- **Do not mix sources** that use different units (e.g., MSRP per pair + retailer each).
+- **Do not convert** between “pair” and “each” unless the source explicitly states the conversion; if the unit is ambiguous, treat the price as **not verifiable** for catalog entry.
+- **Quality check**: ensure the UI label implied by `soldAsPair` matches the source wording (“pair” vs “each/single speaker”).
+
+## Quality checks before output:
+
+- priceMin <= priceMax
+- ports non-empty unless the role truly has none (usually it should not be empty)
+- no unknown fields at the top-level of the product object
+- no unknown port profile IDs
+- amplifiers have power ratings
+- speakers have frequency response
+- speakers have power recommendations
