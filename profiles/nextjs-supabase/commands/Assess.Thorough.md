@@ -84,7 +84,7 @@ You are reviewing code in a **Node + Next.js (App Router)** codebase using **Sup
 
 ### Maintainability & Style Checklist
 - Enforce conventions from:
-  - `/Users/wmeredith/Documents/Refractal Studio/Clients/Seek HiFi/Dev/buildhifi/.cursor/rules/fe-dev.mdc`
+  - `.cursor/rules/fe-dev.mdc`
 - Code quality:
   - Clear naming
   - Single-purpose functions

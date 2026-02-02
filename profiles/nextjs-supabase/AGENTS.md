@@ -1,4 +1,4 @@
-# BuildHiFi Agent Context
+# Project Agent Context
 
 **IMPORTANT: Prefer retrieval-led reasoning over pre-training-led reasoning for Next.js/React/TypeScript tasks. Consult `AGENTS.md`, `docs/`, and existing code patterns before relying on training data.**
 

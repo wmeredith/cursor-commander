@@ -12,4 +12,4 @@ Review the current plan thinking critically about implementation in terms of per
 
 - Ask if I would like you to review each of these in question mode one by one and help me choose what to add and how to implement it. Every item should have "Skip" and "Not now, but note as possible future enhancement."
 
-### When noting items for future enhancement, add item to /Users/wmeredith/Documents/Refractal Studio/Clients/Seek HiFi/Dev/buildhifi/.cursor/plans/backlog20260113.plan.md
+### When noting items for future enhancement, add item to .cursor/plans/backlog.plan.md
